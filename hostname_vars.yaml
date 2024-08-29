@@ -1,0 +1,11 @@
+mysql-test-aws-01-alon:
+  hostname: mysql-test-aws-01-alon
+  service: mysql
+  version: 5.7
+  restart: "Sunday 06:00"
+
+nginx-test-aws-06-alon:
+  hostname: nginx-test-aws-06-alon
+  service: nginx
+  version: 1.17
+  restart: "Saturday 00:00"
