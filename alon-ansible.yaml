@@ -1,0 +1,41 @@
+---
+- name: Manage EC2 instances
+  hosts: managed_instances
+  become: yes
+  vars_files:
+    - ./hostname_vars.yaml
+
+  tasks:
+    - name: Print host variables
+      debug:
+        msg: |
+          Hostname: {{ hostvars[inventory_hostname].hostname }}
+          Service: {{ hostvars[inventory_hostname].service }}
+          Version: {{ hostvars[inventory_hostname].version }}
+      when: hostvars[inventory_hostname].hostname is defined and
+            hostvars[inventory_hostname].service is defined and
+            hostvars[inventory_hostname].version is defined
+
+    - name: Update hostname
+      command: hostnamectl set-hostname "{{ hostvars[inventory_hostname].hostname }}"
+      when: hostvars[inventory_hostname].hostname is defined
+
+    - name: Install service
+      apt:
+        name: "{{ hostvars[inventory_hostname].service }}"
+        state: "{{ 'latest' if hostvars[inventory_hostname].version == 'latest' else 'present' }}"
+      when: hostvars[inventory_hostname].service is defined and
+            hostvars[inventory_hostname].version is defined
+
+    - name: Check service version
+      command: >
+        apt-cache policy {{ hostvars[inventory_hostname].service }} | grep 'Installed:'
+      register: current_version
+      when: hostvars[inventory_hostname].service is defined
+
+    - name: Downgrade service if needed
+      apt:
+        name: "{{ hostvars[inventory_hostname].service }}={{ hostvars[inventory_hostname].version }}"
+        state: present
+      when: hostvars[inventory_hostname].version != 'latest' and
+            hostvars[inventory_hostname].version < current_version.stdout.strip()
